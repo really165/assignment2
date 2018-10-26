@@ -45,7 +45,7 @@ public class Main {
             }
         }
         else {
-            System.err.println("Usage: java assignment1.Main METHOD MAZE_FILE");
+            System.err.println("Usage: java assignment2.Main METHOD MAZE_FILE");
         }
     }
 
@@ -56,9 +56,17 @@ public class Main {
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
         try {
+            boolean even = true;
             while (reader.ready()) {
-                String line = reader.readLine();
-                maze.add(line.replaceAll(" ", "-").toCharArray());
+                if(even){
+                    String line = reader.readLine();
+                    maze.add(line.toCharArray());
+                    even = false;
+                }
+                else{
+                    String line = reader.readLine();
+                    even = true;
+                }
             }
 
             finalizedMaze = maze.toArray(new char[0][0]);
