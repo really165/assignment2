@@ -10,6 +10,7 @@
 * dumb implementation can get cut off after a set time
 
 # PROCESS
+* maze file is read in just like before
 * each time the current position is moved on a color,
 * all available moves should be collected and then validated
 * valid moves should be kept in consideration
@@ -19,7 +20,7 @@
 * There needs to be pipe maze objects
 * each maze object will have:
 	* current position in maze(coordinates)
-	* the current maze for that branch
+	* the current maze for that branch(an array most likely)
 	* a list of possible mazes that is created when the object is created
 	* the last known maze object(for backtracking; NULL for initial maze)
 	* color?(if there's an initial maze object for each color
