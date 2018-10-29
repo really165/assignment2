@@ -56,16 +56,11 @@ public class Main {
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
         try {
-            boolean even = true;
             while (reader.ready()) {
-                if(even){
-                    String line = reader.readLine();
+                String line = reader.readLine();
+
+                if (line.length() > 0) {
                     maze.add(line.toCharArray());
-                    even = false;
-                }
-                else{
-                    String line = reader.readLine();
-                    even = true;
                 }
             }
 
