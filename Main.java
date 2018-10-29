@@ -21,17 +21,17 @@ public class Main {
                     input = new FileInputStream(args[1]);
                 }
 
-                char[][] pipeMaze = readFile(input);
-                printMaze(pipeMaze);
+                char[][] puzzle = readFile(input);
+                printPuzzle(puzzle);
 
                 Searcher searcher;
                 switch (args[0]) {
                     case "smart":
-                        searcher = new Smart(pipeMaze);
+                        searcher = new Smart(puzzle);
                         break;
 
                     case "dumb":
-                        searcher = new Dumb(pipeMaze);
+                        searcher = new Dumb(puzzle);
                         break;
 
                     default:
@@ -45,13 +45,13 @@ public class Main {
             }
         }
         else {
-            System.err.println("Usage: java assignment2.Main METHOD MAZE_FILE");
+            System.err.println("Usage: java assignment2.Main METHOD PUZZLE_FILE");
         }
     }
 
     private static char[][] readFile(InputStream stream) throws FileNotFoundException {
-        ArrayList<char[]> maze = new ArrayList<>();
-        char[][] finalizedMaze = null;
+        ArrayList<char[]> puzzle = new ArrayList<>();
+        char[][] finalizedPuzzle = null;
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
@@ -60,21 +60,21 @@ public class Main {
                 String line = reader.readLine();
 
                 if (line.length() > 0) {
-                    maze.add(line.toCharArray());
+                    puzzle.add(line.toCharArray());
                 }
             }
 
-            finalizedMaze = maze.toArray(new char[0][0]);
+            finalizedPuzzle = puzzle.toArray(new char[0][0]);
         }
         catch (IOException e) {
             System.err.println("Fuck.");
         }
 
-        return finalizedMaze;
+        return finalizedPuzzle;
     }
 
-    public static void printMaze(char[][] maze) {
-        for(char[] row : maze) {
+    public static void printPuzzle(char[][] puzzle) {
+        for(char[] row : puzzle) {
             assert row != null;
 
             System.out.println(row);

@@ -1,15 +1,15 @@
 package assignment2;
 
-public class PipeMaze {
-    //position in maze
+public class PipePuzzle {
+    //position in puzzle
     int x, y;
-    //current maze
+    //current puzzle
     char[][] current;    
     //booleans to keep track of which ways can be moved
     boolean up, down, left, right;
     
     
-    public PipeMaze(char[][] input){
+    public PipePuzzle(char[][] input){
         this.current = input;
     }
     

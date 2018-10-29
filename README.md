@@ -10,21 +10,21 @@
 * dumb implementation can get cut off after a set time
 
 # PROCESS
-* maze file is read in just like before
+* puzzle file is read in just like before
 * each time the current position is moved on a color,
 * all available moves should be collected and then validated
 * valid moves should be kept in consideration
-* when no valid moves, get rid of that pipe maze and algorithm backtracks to the last known pipe maze
+* when no valid moves, get rid of that pipe puzzle and algorithm backtracks to the last known pipe maze
 
 # COMPONENTS
-* There needs to be pipe maze objects
-* each maze object will have:
-	* current position in maze(coordinates)
-	* the current maze for that branch(an array most likely)
-	* a list of possible mazes that is created when the object is created
-	* the last known maze object(for backtracking; NULL for initial maze)
-	* color?(if there's an initial maze object for each color
-* maze class may include methods that do the following:
-	* constructor that takes parent maze, generated maze, and position as arguments
+* There needs to be pipe puzzle objects
+* each puzzle object will have:
+	* current position in puzzle(coordinates)
+	* the current puzzle for that branch(an array most likely)
+	* a list of possible puzzle that is created when the object is created
+	* the last known puzzle object(for backtracking; NULL for initial maze)
+	* color?(if there's an initial puzzle object for each color
+* puzzle class may include methods that do the following:
+	* constructor that takes parent puzzle, generated maze, and position as arguments
 	* find the valid moves: checks all neighbors and constructs the children objects
-	* backtrack: go back to the parent maze and get rid of this maze
+	* backtrack: go back to the parent puzzle and get rid of this maze
