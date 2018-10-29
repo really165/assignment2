@@ -21,22 +21,22 @@ public class PipePuzzle {
     public void setAvailableMoves(){
         //finds available moves
         if(x-1>=0){
-            if(current[(x-1)][y]=="_".charAt(0)){
+            if(current[(x-1)][y]=='_'){
                 up = true;
             }
         }
         if(x+1 < current.length){
-            if(current[(x+1)][y]=="_".charAt(0)){
+            if(current[(x+1)][y]=='_'){
                 down = true;
             }
         }
         if(y-1>=0){
-            if(current[x][(y-1)]=="_".charAt(0)){
+            if(current[x][(y-1)]=='_'){
                 left = true;
             }
         }
         if(y+1 < current[0].length){
-            if(current[x][(y+1)]=="_".charAt(0)){
+            if(current[x][(y+1)]=='_'){
                 right = true;
             }
         }
