@@ -3,6 +3,7 @@ package assignment2;
 import java.util.*;
 import java.lang.IndexOutOfBoundsException;
 import java.util.concurrent.TimeUnit;
+import java.util.Timer;
 
 public class DumbPuzzle {
     private ArrayList<Character> succession;
@@ -30,6 +31,8 @@ public class DumbPuzzle {
     }
 
     public void solve() {
+        long startTime = System.currentTimeMillis();
+
         Stack<Coord> decisions = new Stack<>();
 
         System.out.print("Succession: ");
@@ -44,12 +47,12 @@ public class DumbPuzzle {
 
             if (next == null) {
                 if (isSolved()) {
-                    return;
+                    break;
                 }
                 else {
                     current = backtrack(decisions);
                     if (current == null) {
-                        return;
+                        break;
                     }
                 }
             }
@@ -61,13 +64,14 @@ public class DumbPuzzle {
                 else {
                     current = backtrack(decisions);
                     if (current == null) {
-                        return;
+                        break;
                     }
                 }
             }
 
             decisions.push(current);
-            System.out.printf("\r%d", ++counter);
+            //System.out.printf("\r%d", ++counter);
+
             //print();
             //System.out.println();
             //try {
@@ -75,19 +79,23 @@ public class DumbPuzzle {
             //}
             //catch (Exception e) { }
         }
+
+        long endTime = System.currentTimeMillis();
+        System.out.printf("Total time: %dms\n", endTime - startTime);
     }
     private int counter = 0;
 
     private Coord backtrack(Stack<Coord> decisions) {
         Coord decision = null;
 
-        while (!decisions.empty()) {
-            decision = decisions.pop();
-
-            if (performSuccessionAt(decision) != 0) {
-                break;
+        do {
+            if (decisions.empty()) {
+                return null;
             }
+
+            decision = decisions.pop();
         }
+        while (performSuccessionAt(decision) == 0);
 
         return decision;
     }
@@ -202,9 +210,10 @@ public class DumbPuzzle {
                     continue;
                 }
 
-                int count = 0;
+                int likeCount = 0;
+                boolean hasEmptyNeighbor = false;
                 if (cell < 0) {
-                    ++count;
+                    ++likeCount;
                     cell = -cell;
                 }
 
@@ -215,8 +224,14 @@ public class DumbPuzzle {
 
                 for (Coord candidate : candidates) {
                     try {
-                        if (puzzle[candidate.r][candidate.c] == cell) {
-                            ++count;
+                        int other = puzzle[candidate.r][candidate.c];
+                        if (other < 0) other = -other;
+
+                        if (other == cell) {
+                            ++likeCount;
+                        }
+                        else if (other == 0) {
+                            hasEmptyNeighbor = true;
                         }
                     }
                     catch (IndexOutOfBoundsException e) {
@@ -224,7 +239,10 @@ public class DumbPuzzle {
                     }
                 }
 
-                if (count > 2) {
+                if (likeCount > 2) {
+                    return false;
+                }
+                else if (!hasEmptyNeighbor && likeCount != 2) {
                     return false;
                 }
             }
