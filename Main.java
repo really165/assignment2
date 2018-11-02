@@ -21,24 +21,26 @@ public class Main {
                     input = new FileInputStream(args[1]);
                 }
 
-                char[][] puzzle = readFile(input);
-                printPuzzle(puzzle);
+                char[][] rawPuzzle = readFile(input);
 
-                Searcher searcher;
                 switch (args[0]) {
                     case "smart":
-                        searcher = new Smart(puzzle);
+                        /* TODO */
+                        //new SmartPuzzle(puzzle).solve();
                         break;
 
                     case "dumb":
-                        searcher = new Dumb(puzzle);
+                        DumbPuzzle puzzle = new DumbPuzzle(rawPuzzle);
+                        puzzle.print();
+                        System.out.println();
+                        puzzle.solve();
+                        System.out.println();
+                        puzzle.print();
                         break;
 
                     default:
                         throw new IllegalArgumentException("Must be smart/dumb");
                 }
-
-                searcher.findSolution();
             }
             catch (FileNotFoundException e) {
                 System.err.println("File not found");
@@ -71,13 +73,5 @@ public class Main {
         }
 
         return finalizedPuzzle;
-    }
-
-    public static void printPuzzle(char[][] puzzle) {
-        for(char[] row : puzzle) {
-            assert row != null;
-
-            System.out.println(row);
-        }
     }
 }
