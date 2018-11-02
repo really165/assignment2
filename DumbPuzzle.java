@@ -31,8 +31,6 @@ public class DumbPuzzle {
     }
 
     public void solve() {
-        long startTime = System.currentTimeMillis();
-
         Stack<Coord> decisions = new Stack<>();
 
         System.out.print("Succession: ");
@@ -79,10 +77,8 @@ public class DumbPuzzle {
             //}
             //catch (Exception e) { }
         }
-
-        long endTime = System.currentTimeMillis();
-        System.out.printf("Total time: %dms\n", endTime - startTime);
     }
+
     private int counter = 0;
 
     private Coord backtrack(Stack<Coord> decisions) {
