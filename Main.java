@@ -22,25 +22,25 @@ public class Main {
                 }
 
                 char[][] rawPuzzle = readFile(input);
-
+                Puzzle puzzle;
                 switch (args[0]) {
                     case "smart":
-                        /* TODO */
-                        //new SmartPuzzle(puzzle).solve();
+                        puzzle = new SmartPuzzle(rawPuzzle);
                         break;
 
                     case "dumb":
-                        DumbPuzzle puzzle = new DumbPuzzle(rawPuzzle);
-                        puzzle.print();
-                        System.out.println();
-                        puzzle.solve();
-                        System.out.println();
-                        puzzle.print();
+                        puzzle = new DumbPuzzle(rawPuzzle);
                         break;
 
                     default:
                         throw new IllegalArgumentException("Must be smart/dumb");
                 }
+
+                puzzle.print();
+                System.out.println();
+                puzzle.solve();
+                System.out.println();
+                puzzle.print();
             }
             catch (FileNotFoundException e) {
                 System.err.println("File not found");

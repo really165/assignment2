@@ -5,7 +5,7 @@ import java.lang.IndexOutOfBoundsException;
 import java.util.concurrent.TimeUnit;
 import java.util.Timer;
 
-public class DumbPuzzle {
+public class DumbPuzzle implements Puzzle {
     private ArrayList<Character> succession;
     private int[][] puzzle;
 
@@ -128,7 +128,7 @@ public class DumbPuzzle {
     /* solely here so that I don't need to new it every time */
     private Coord[] candidates = new Coord[4];
 
-    public boolean isSolved() {
+    private boolean isSolved() {
         for (int i = 0; i < puzzle.length; ++i) {
             int[] row = puzzle[i];
 
@@ -194,7 +194,7 @@ public class DumbPuzzle {
         return null;
     }
 
-    public boolean isValid() {
+    private boolean isValid() {
         for (int i = 0; i < puzzle.length; ++i) {
             int[] row = puzzle[i];
 
