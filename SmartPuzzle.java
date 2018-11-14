@@ -81,8 +81,6 @@ public class SmartPuzzle implements Puzzle {
 
             if (evaluate() == BoardStatus.INVALID) {
                 /* back track */
-                int nextSP;
-
                 do {
                     decision = locations.pop();
                     superposition = values.pop() ^ superpositionAt(decision);
@@ -108,6 +106,18 @@ public class SmartPuzzle implements Puzzle {
             else {
                 break;
             }
+        }
+
+        switch (evaluate()) {
+            case SOLVED:
+                System.out.println("It is solved.");
+                break;
+            case VALID:
+                System.out.println("It is not solved.");
+                break;
+            case INVALID:
+                System.out.println("It is unsolvable.");
+                break;
         }
     }
 
@@ -447,9 +457,6 @@ public class SmartPuzzle implements Puzzle {
                             System.err.printf("NOT THE RIGHT AMOUNT! (%d,%d) <%d>\n", r, c, equalCount);
                         }
                         return BoardStatus.INVALID;
-                    }
-                    else {
-                        status = BoardStatus.VALID;
                     }
                 }
                 else {
