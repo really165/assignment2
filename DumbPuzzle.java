@@ -1,13 +1,12 @@
-package assignment2;
-
 import java.util.*;
 import java.lang.IndexOutOfBoundsException;
 import java.util.concurrent.TimeUnit;
 import java.util.Timer;
 
-public class DumbPuzzle implements Puzzle {
+public class DumbPuzzle {
     private ArrayList<Character> succession;
     private int[][] puzzle;
+    private int var_assignments = 0; //counter for the variable assinments
 
     public DumbPuzzle(char[][] input){
         this.succession = new ArrayList<Character>();
@@ -97,7 +96,10 @@ public class DumbPuzzle implements Puzzle {
     }
 
     public void print() {
-        for(int[] row : this.puzzle) {
+      // printing assignment count
+        System.out.println("Variable Assignments: " + var_assignments);
+
+       for(int[] row : this.puzzle) {
             assert row != null;
 
             for(int s : row) {
@@ -122,13 +124,16 @@ public class DumbPuzzle implements Puzzle {
 
     private int performSuccessionAt(Coord c) {
         int result = puzzle[c.r][c.c] = successor(puzzle[c.r][c.c]);
+        if(result != 0) {
+            var_assignments++;
+        }
         return result;
     }
 
     /* solely here so that I don't need to new it every time */
     private Coord[] candidates = new Coord[4];
 
-    private boolean isSolved() {
+    public boolean isSolved() {
         for (int i = 0; i < puzzle.length; ++i) {
             int[] row = puzzle[i];
 
@@ -194,7 +199,7 @@ public class DumbPuzzle implements Puzzle {
         return null;
     }
 
-    private boolean isValid() {
+    public boolean isValid() {
         for (int i = 0; i < puzzle.length; ++i) {
             int[] row = puzzle[i];
 
