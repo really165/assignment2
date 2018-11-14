@@ -10,18 +10,19 @@ public class SmartPuzzle implements Puzzle {
      *
      * Each cell of the puzzle is to be interpreted as a bitfield with the top
      * 2 bits representing flags and the bottom 30 bits representing a
-     * superposision of colors.
+     * superposition of colors.
      */
     private int[][] puzzle;
 
     private static final boolean PRINT_EVERY_FORWARD_CELL = false;
     private static final boolean PRINT_EVERY_BACKWARD_CELL = false;
     private static final boolean PRINT_AFTER_PASS = false;
+    private static final boolean PRINT_AFTER_SELECTION = false;
 
     private static final int FIXED_FLAG = 1 << 31;
     private static final int DECIDED_FLAG = 1 << 30;
     private static final int FLAGS_MASK = FIXED_FLAG | DECIDED_FLAG;
-    private static final int SUPERPOSISION_MASK = ~FLAGS_MASK;
+    private static final int SUPERPOSITION_MASK = ~FLAGS_MASK;
     private final int ALL_COLORS_MASK;
 
     private List<Character> palette;
@@ -68,69 +69,44 @@ public class SmartPuzzle implements Puzzle {
     }
 
     public void solve() {
-        final Stack<Coord> decisionLocations = new Stack<>();
-        final Stack<Integer> decisionPreviousValues = new Stack<>();
+        final Stack<Coord> locations = new Stack<>();
+        final Stack<Integer> values = new Stack<>();
+        BoardStatus status;
 
         resetConstraints();
+        for (;;) {
+            constrain();
+            Coord decision = nextMostConstrainedButUnDecided();
+            int superposition = superpositionAt(decision);
 
-        print();
-        System.out.println();
-        try {
-            TimeUnit.MILLISECONDS.sleep(200);
-        }
-        catch (Exception e) { }
+            if (evaluate() == BoardStatus.INVALID) {
+                /* back track */
+                int nextSP;
 
-        constrain();
+                do {
+                    decision = locations.pop();
+                    superposition = values.pop() ^ superpositionAt(decision);
 
-        if (evaluate() == BoardStatus.VALID) {
-            print();
-            System.out.println();
-            try {
-                TimeUnit.MILLISECONDS.sleep(200);
+                    setFlagsAt(decision, 0);
+                }
+                while (superposition == 0);
+
+                resetConstraints();
             }
-            catch (Exception e) { }
 
-            for (Coord decision;;) {
-                decision = nextMostConstrainedButUnDecided();
+            if (decision != null) {
+                locations.push(decision);
+                values.push(superposition);
 
-                decisionLocations.push(decision);
-                decisionPreviousValues.push(superposisionAt(decision));
+                puzzle[decision.r][decision.c] = DECIDED_FLAG | Integer.lowestOneBit(superposition);
 
-                puzzle[decision.r][decision.c] = DECIDED_FLAG | Integer.lowestOneBit(superposisionAt(decision));
-
-                constrain();
-
-                print();
-                System.out.println();
-                try {
-                    TimeUnit.MILLISECONDS.sleep(200);
+                if (PRINT_AFTER_SELECTION) {
+                    System.out.printf("select %d,%d\n", decision.r, decision.c);
+                    print();
                 }
-                catch (Exception e) { }
-
-                BoardStatus status = evaluate();
-                if (status == BoardStatus.INVALID) {
-                    if (decisionLocations.empty()) {
-                        break;
-                    }
-                    else {
-                        /* we've got to back track */
-
-                        decision = decisionLocations.pop();
-                        int prevSP = decisionPreviousValues.pop();
-                        int triedValue = superposisionAt(decision);
-                        int nextValue = prevSP ^ triedValue;
-
-                        resetConstraints();
-                        puzzle[decision.r][decision.c] = nextValue;
-
-                        if (Integer.bitCount(nextValue) == 1) {
-                            puzzle[decision.r][decision.c] |= DECIDED_FLAG;
-                        }
-                    }
-                }
-                else if (status == BoardStatus.SOLVED) {
-                    break;
-                }
+            }
+            else {
+                break;
             }
         }
     }
@@ -168,6 +144,10 @@ public class SmartPuzzle implements Puzzle {
                 for (int c = 0; c < row.length; ++c) {
                     /* forward constrain */
 
+                    if (superpositionFor(row[c]) == 0) {
+                        return;
+                    }
+
                     /* reset our lists for reuse */
                     superCells.clear();
                     equalCells.clear();
@@ -179,21 +159,21 @@ public class SmartPuzzle implements Puzzle {
                     neighbors[2] = new Coord(r, c-1);
                     neighbors[3] = new Coord(r, c+1);
 
-                    int cellSuperposision = superposisionFor(row[c]);
+                    int cellsuperposition = superpositionFor(row[c]);
 
-                    if (cellSuperposision == 0) {
+                    if (cellsuperposition == 0) {
                         break;
                     }
 
                     for (Coord neighbor : neighbors) {
-                        int neighborSuperposision = superposisionAt(neighbor);
-                        int intersection = neighborSuperposision & cellSuperposision;
+                        int neighborsuperposition = superpositionAt(neighbor);
+                        int intersection = neighborsuperposition & cellsuperposition;
 
-                        if (intersection == cellSuperposision) {
+                        if (intersection == cellsuperposition) {
                             superCells.add(neighbor);
                         }
 
-                        if (neighborSuperposision == cellSuperposision) {
+                        if (neighborsuperposition == cellsuperposition) {
                             equalCells.add(neighbor);
                         }
 
@@ -201,67 +181,67 @@ public class SmartPuzzle implements Puzzle {
                             disjointCells.add(neighbor);
                         }
 
-                        if (Integer.bitCount(neighborSuperposision) > 1) {
+                        if (Integer.bitCount(neighborsuperposition) > 1) {
                             underConstrainedCells.add(neighbor);
                         }
                     }
 
                     if (flagsFor(row[c]) == FIXED_FLAG) {
-                        assert Integer.bitCount(cellSuperposision) == 1;
+                        assert Integer.bitCount(cellsuperposition) == 1;
 
                         if (superCells.size() == 1) {
                             for (Coord neighbor : neighbors) {
                                 if (superCells.contains(neighbor)) {
-                                    constrainedCell |= applySuperposisionAt(neighbor, cellSuperposision);
+                                    constrainedCell |= applySuperpositionAt(neighbor, cellsuperposition);
                                 }
                                 else {
-                                    constrainedCell |= applySuperposisionAt(neighbor, ~cellSuperposision);
+                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellsuperposition);
                                 }
                             }
                         }
                         else if (equalCells.size() == 1) {
                             for (Coord neighbor : neighbors) {
                                 if (!equalCells.contains(neighbor)) {
-                                    constrainedCell |= applySuperposisionAt(neighbor, ~cellSuperposision);
+                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellsuperposition);
                                 }
                             }
                         }
                     }
                     else {
-                        //if (Integer.bitCount(cellSuperposision) == 1 && equalCells.size() == 2) {
-                            //for (Coord neighbor : neighbors) {
-                                //if (!equalCells.contains(neighbor)) {
-                                    //constrainedCell |= applySuperposisionAt(neighbor, ~cellSuperposision);
-                                //}
-                            //}
-                        //}
-                        //else if (disjointCells.size() == 2) {
-                            //for (Coord neighbor : neighbors) {
-                                //if (!disjointCells.contains(neighbor)) {
-                                    //constrainedCell |= applySuperposisionAt(neighbor, cellSuperposision);
-                                //}
-                            //}
-                        //}
-                        //else if (underConstrainedCells.size() == 1) {
-                            //Coord cell = underConstrainedCells.get(0);
-                            //boolean doit = true;
+                        if (Integer.bitCount(cellsuperposition) == 1 && equalCells.size() == 2) {
+                            for (Coord neighbor : neighbors) {
+                                if (!equalCells.contains(neighbor)) {
+                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellsuperposition);
+                                }
+                            }
+                        }
+                        else if (disjointCells.size() == 2) {
+                            for (Coord neighbor : neighbors) {
+                                if (!disjointCells.contains(neighbor)) {
+                                    constrainedCell |= applySuperpositionAt(neighbor, cellsuperposition);
+                                }
+                            }
+                        }
+                        else if (underConstrainedCells.size() == 1) {
+                            Coord cell = underConstrainedCells.get(0);
+                            boolean doit = true;
 
-                            //for (Coord neighbor : neighbors) {
-                                //if (neighbor == cell) continue;
+                            for (Coord neighbor : neighbors) {
+                                if (neighbor == cell) continue;
 
-                                //for (Coord otherNeighbor : neighbors) {
-                                    //if (neighbor == otherNeighbor) continue;
+                                for (Coord otherNeighbor : neighbors) {
+                                    if (neighbor == otherNeighbor) continue;
 
-                                    //if (superposisionAt(neighbor) == superposisionAt(otherNeighbor)) {
-                                        //doit = false;
-                                    //}
-                                //}
-                            //}
+                                    if (superpositionAt(neighbor) == superpositionAt(otherNeighbor)) {
+                                        doit = false;
+                                    }
+                                }
+                            }
 
-                            //if (doit) {
-                                //constrainedCell |= applySuperposisionAt(cell, cellSuperposision);
-                            //}
-                        //}
+                            if (doit) {
+                                constrainedCell |= applySuperpositionAt(cell, cellsuperposition);
+                            }
+                        }
                     }
 
                     if (PRINT_EVERY_FORWARD_CELL) {
@@ -274,17 +254,15 @@ public class SmartPuzzle implements Puzzle {
             if (PRINT_AFTER_PASS) {
                 System.out.printf("forward\n");
                 print();
-                try {
-                    //TimeUnit.MILLISECONDS.sleep(200);
-                    System.in.read();
-                }
-                catch (Exception e) { }
             }
 
             for (int r = 0; r < puzzle.length; ++r) {
                 int[] row = puzzle[r];
                 for (int c = 0; c < row.length; ++c) {
                     if (flagsFor(row[c]) != 0) continue;
+                    if (superpositionFor(row[c]) == 0) {
+                        return;
+                    }
 
                     /* backward constrain */
                     int colorsRouted = 0;
@@ -300,15 +278,15 @@ public class SmartPuzzle implements Puzzle {
                                 continue;
                             }
 
-                            int neighborSuperposision = superposisionAt(neighbor);
-                            int otherNeighborSuperposision = superposisionAt(otherNeighbor);
+                            int neighborsuperposition = superpositionAt(neighbor);
+                            int otherNeighborsuperposition = superpositionAt(otherNeighbor);
 
-                            colorsRouted |= neighborSuperposision & otherNeighborSuperposision;
+                            colorsRouted |= neighborsuperposition & otherNeighborsuperposition;
                         }
                     }
 
                     int old = row[c];
-                    row[c] &= FLAGS_MASK | (colorsRouted & SUPERPOSISION_MASK);
+                    row[c] &= FLAGS_MASK | (colorsRouted & SUPERPOSITION_MASK);
                     constrainedCell |= (row[c] != old);
                 }
             }
@@ -316,12 +294,6 @@ public class SmartPuzzle implements Puzzle {
             if (PRINT_AFTER_PASS) {
                 System.out.printf("backward\n");
                 print();
-                System.out.println();
-                try {
-                    //TimeUnit.MILLISECONDS.sleep(200);
-                    System.in.read();
-                }
-                catch (Exception e) { }
             }
         }
         while (constrainedCell);
@@ -332,7 +304,34 @@ public class SmartPuzzle implements Puzzle {
     private final char[] printBuffer;
 
     public void print() {
-        print(-1,-1);
+        //print(-1,-1);
+        for (int[] row : puzzle) {
+            for (int field : row) {
+                int flags = flagsFor(field);
+                int sp = superpositionFor(field);
+                char symbol;
+
+                if (Integer.bitCount(sp) > 1) {
+                    symbol = '?';
+                }
+                else {
+                    int idx = 32 - Integer.numberOfLeadingZeros(sp);
+                    symbol = palette.get(idx);
+                }
+
+                if ((flags & FIXED_FLAG) == 0) {
+                    symbol = Character.toLowerCase(symbol);
+                }
+
+                System.out.print(symbol);
+            }
+            System.out.println();
+        }
+
+        System.out.println();
+        try {
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (Exception e) { }
     }
 
     public void print(int rr, int cc) {
@@ -379,6 +378,11 @@ public class SmartPuzzle implements Puzzle {
             }
             System.out.println();
         }
+
+        System.out.println();
+        try {
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (Exception e) { }
     }
 
     private BoardStatus evaluate() {
@@ -388,12 +392,67 @@ public class SmartPuzzle implements Puzzle {
             int[] row = puzzle[r];
 
             for (int c = 0; c < row.length; ++c) {
-                int sp = superposisionFor(row[c]);
+                int sp = superpositionFor(row[c]);
 
                 if (sp == 0) {
+                    if (PRINT_AFTER_SELECTION) {
+                        System.err.println("BLANK!");
+                    }
                     return BoardStatus.INVALID;
                 }
-                else if (Integer.bitCount(sp) > 1) {
+                else if (Integer.bitCount(sp) == 1) {
+                    int equalCount = 0;
+                    int superCount = 0;
+                    boolean hasUnderConstrainedNeighbor = false;
+                    if (flagsFor(row[c]) == FIXED_FLAG) {
+                        ++equalCount;
+                        ++superCount;
+                    }
+
+                    neighbors[0] = new Coord(r-1, c);
+                    neighbors[1] = new Coord(r+1, c);
+                    neighbors[2] = new Coord(r, c-1);
+                    neighbors[3] = new Coord(r, c+1);
+
+                    for (Coord neighbor : neighbors) {
+                        int other = superpositionAt(neighbor);
+
+                        if (other == sp) {
+                            ++equalCount;
+                        }
+
+                        if ((other & sp) == sp) {
+                            ++superCount;
+                        }
+
+                        if (Integer.bitCount(other) > 1) {
+                            hasUnderConstrainedNeighbor = true;
+                        }
+                    }
+
+                    if (equalCount > 2) {
+                        if (PRINT_AFTER_SELECTION) {
+                            System.err.printf("TOO MANY! (%d,%d)\n", r, c);
+                        }
+                        return BoardStatus.INVALID;
+                    }
+                    else if (superCount < 2) {
+                        if (PRINT_AFTER_SELECTION) {
+                            System.err.printf("TOO FEW! (%d,%d)\n", r, c);
+                        }
+                        return BoardStatus.INVALID;
+                    }
+                    else if (!hasUnderConstrainedNeighbor && equalCount != 2) {
+                        if (PRINT_AFTER_SELECTION) {
+                            System.err.printf("NOT THE RIGHT AMOUNT! (%d,%d) <%d>\n", r, c, equalCount);
+                        }
+                        return BoardStatus.INVALID;
+                    }
+                    else {
+                        status = BoardStatus.VALID;
+                    }
+                }
+                else {
                     status = BoardStatus.VALID;
                 }
             }
@@ -409,30 +468,29 @@ public class SmartPuzzle implements Puzzle {
     }
 
     private Coord nextMostConstrainedButUnDecided() {
-        Coord theThing = new Coord(-1, -1);
+        Coord coord = new Coord(-1, -1);
         int constraints = Integer.MAX_VALUE;
 
         for (int r = 0; r < puzzle.length; ++r) {
             int[] row = puzzle[r];
 
             for (int c = 0; c < row.length; ++c) {
-                int count = Integer.bitCount(superposisionFor(row[c]));
+                int count = Integer.bitCount(superpositionFor(row[c]));
 
                 if (count > 1 && count < constraints) {
                     constraints = count;
-                    theThing.r = r;
-                    theThing.c = c;
-                    System.out.printf(">>>found better! (%d,%d)\n", r, c);
+                    coord.r = r;
+                    coord.c = c;
                 }
             }
         }
 
-        if (theThing.r == -1) {
+        if (coord.r == -1) {
             /* no cell was found */
             return null;
         }
         else {
-            return theThing;
+            return coord;
         }
     }
 
@@ -447,17 +505,17 @@ public class SmartPuzzle implements Puzzle {
         return (1 << idx) >>> 1;
     }
 
-    private int superposisionFor(int cell) {
-        return cell & SUPERPOSISION_MASK;
+    private int superpositionFor(int cell) {
+        return cell & SUPERPOSITION_MASK;
     }
 
     private int flagsFor(int cell) {
         return cell & FLAGS_MASK;
     }
 
-    private int superposisionAt(Coord loc) {
+    private int superpositionAt(Coord loc) {
         try {
-            return superposisionFor(puzzle[loc.r][loc.c]);
+            return superpositionFor(puzzle[loc.r][loc.c]);
         }
         catch (Exception e) {
             return 0;
@@ -473,16 +531,26 @@ public class SmartPuzzle implements Puzzle {
         }
     }
 
-    private boolean applySuperposisionAt(Coord loc, int sp) {
+    private boolean applySuperpositionAt(Coord loc, int sp) {
         try {
             int old = puzzle[loc.r][loc.c];
 
-            puzzle[loc.r][loc.c] &= FLAGS_MASK | (sp & SUPERPOSISION_MASK);
+            puzzle[loc.r][loc.c] &= FLAGS_MASK | (sp & SUPERPOSITION_MASK);
 
             return (puzzle[loc.r][loc.c] != old);
         }
         catch (Exception e) {
             return false;
         }
+    }
+
+    private void setFlagsAt(Coord loc, int flags) {
+        puzzle[loc.r][loc.c] &= SUPERPOSITION_MASK; /* keep superposition */
+        puzzle[loc.r][loc.c] |= flags & FLAGS_MASK; /* set flags */
+    }
+
+    private void setSuperpositionAt(Coord loc, int sp) {
+        puzzle[loc.r][loc.c] &= FLAGS_MASK; /* keep flags */
+        puzzle[loc.r][loc.c] |= sp & SUPERPOSITION_MASK; /* set superposition */
     }
 }
