@@ -144,7 +144,22 @@ public class SmartPuzzle implements Puzzle {
     private void constrain() {
         boolean constrainedCell;
 
-        /* using the forward-backward thrashing model */
+        /* using the forward-backward thrashing model
+         *
+         * By this, I mean that we pass over the entire board, forward
+         * constraining then backward constraining until no cell is modified,
+         * with the potential to early-out if we ever come across an empty
+         * cell.
+         *
+         * There may be (and probably are) better models. For example, we could
+         * keep a stack/queue onto which we place cells whose neighbors have
+         * been modified. This would (probably) make it so that we don't need
+         * to pass over the entire puzzle every time, as only those nodes have
+         * the possibility of being modified.
+         *
+         * For now, this model is fine: it's solving the 14x14 in 2 seconds on
+         * my machine!
+         */
 
         do {
             constrainedCell = false;
@@ -169,21 +184,21 @@ public class SmartPuzzle implements Puzzle {
                     neighbors[2] = new Coord(r, c-1);
                     neighbors[3] = new Coord(r, c+1);
 
-                    int cellsuperposition = superpositionFor(row[c]);
+                    int cellSuperposition = superpositionFor(row[c]);
 
-                    if (cellsuperposition == 0) {
+                    if (cellSuperposition == 0) {
                         break;
                     }
 
                     for (Coord neighbor : neighbors) {
-                        int neighborsuperposition = superpositionAt(neighbor);
-                        int intersection = neighborsuperposition & cellsuperposition;
+                        int neighborSuperposition = superpositionAt(neighbor);
+                        int intersection = neighborSuperposition & cellSuperposition;
 
-                        if (intersection == cellsuperposition) {
+                        if (intersection == cellSuperposition) {
                             superCells.add(neighbor);
                         }
 
-                        if (neighborsuperposition == cellsuperposition) {
+                        if (neighborSuperposition == cellSuperposition) {
                             equalCells.add(neighbor);
                         }
 
@@ -191,44 +206,44 @@ public class SmartPuzzle implements Puzzle {
                             disjointCells.add(neighbor);
                         }
 
-                        if (Integer.bitCount(neighborsuperposition) > 1) {
+                        if (Integer.bitCount(neighborSuperposition) > 1) {
                             underConstrainedCells.add(neighbor);
                         }
                     }
 
                     if (flagsFor(row[c]) == FIXED_FLAG) {
-                        assert Integer.bitCount(cellsuperposition) == 1;
+                        assert Integer.bitCount(cellSuperposition) == 1;
 
                         if (superCells.size() == 1) {
                             for (Coord neighbor : neighbors) {
                                 if (superCells.contains(neighbor)) {
-                                    constrainedCell |= applySuperpositionAt(neighbor, cellsuperposition);
+                                    constrainedCell |= applySuperpositionAt(neighbor, cellSuperposition);
                                 }
                                 else {
-                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellsuperposition);
+                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellSuperposition);
                                 }
                             }
                         }
                         else if (equalCells.size() == 1) {
                             for (Coord neighbor : neighbors) {
                                 if (!equalCells.contains(neighbor)) {
-                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellsuperposition);
+                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellSuperposition);
                                 }
                             }
                         }
                     }
                     else {
-                        if (Integer.bitCount(cellsuperposition) == 1 && equalCells.size() == 2) {
+                        if (Integer.bitCount(cellSuperposition) == 1 && equalCells.size() == 2) {
                             for (Coord neighbor : neighbors) {
                                 if (!equalCells.contains(neighbor)) {
-                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellsuperposition);
+                                    constrainedCell |= applySuperpositionAt(neighbor, ~cellSuperposition);
                                 }
                             }
                         }
                         else if (disjointCells.size() == 2) {
                             for (Coord neighbor : neighbors) {
                                 if (!disjointCells.contains(neighbor)) {
-                                    constrainedCell |= applySuperpositionAt(neighbor, cellsuperposition);
+                                    constrainedCell |= applySuperpositionAt(neighbor, cellSuperposition);
                                 }
                             }
                         }
@@ -249,7 +264,7 @@ public class SmartPuzzle implements Puzzle {
                             }
 
                             if (doit) {
-                                constrainedCell |= applySuperpositionAt(cell, cellsuperposition);
+                                constrainedCell |= applySuperpositionAt(cell, cellSuperposition);
                             }
                         }
                     }
@@ -288,10 +303,10 @@ public class SmartPuzzle implements Puzzle {
                                 continue;
                             }
 
-                            int neighborsuperposition = superpositionAt(neighbor);
-                            int otherNeighborsuperposition = superpositionAt(otherNeighbor);
+                            int neighborSuperposition = superpositionAt(neighbor);
+                            int otherNeighborSuperposition = superpositionAt(otherNeighbor);
 
-                            colorsRouted |= neighborsuperposition & otherNeighborsuperposition;
+                            colorsRouted |= neighborSuperposition & otherNeighborSuperposition;
                         }
                     }
 
@@ -344,11 +359,11 @@ public class SmartPuzzle implements Puzzle {
         } catch (Exception e) { }
     }
 
+    /* the version of print which prints out the full superposition with cell
+     * (rr,cc) marked in backward angle brackets */
     public void print(int rr, int cc) {
-        //for (int[] row : puzzle) {
         for (int r = 0; r < puzzle.length; ++r) {
             int[] row = puzzle[r];
-            //for (int field : row) {
             for (int c = 0; c < row.length; ++c) {
                 int field = row[c];
                 boolean toLower = true;
