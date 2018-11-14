@@ -66,6 +66,8 @@ public class DumbPuzzle {
                 }
             }
 
+            //incrementing var assignments
+            var_assignments++;
             decisions.push(current);
             //System.out.printf("\r%d", ++counter);
 
@@ -124,9 +126,6 @@ public class DumbPuzzle {
 
     private int performSuccessionAt(Coord c) {
         int result = puzzle[c.r][c.c] = successor(puzzle[c.r][c.c]);
-        if(result != 0) {
-            var_assignments++;
-        }
         return result;
     }
 
