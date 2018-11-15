@@ -1,5 +1,3 @@
-package assignment2;
-
 import java.util.*;
 import java.lang.IndexOutOfBoundsException;
 import java.util.concurrent.TimeUnit;
@@ -27,10 +25,12 @@ public class SmartPuzzle implements Puzzle {
 
     private List<Character> palette;
     private static final char UNSET_SYMBOL = '_';
+    int var_assignments = 0; //couter for variable assignments
 
     public SmartPuzzle(char[][] raw) {
         puzzle = new int[raw.length][];
         palette = new ArrayList<>();
+
 
         palette.add(UNSET_SYMBOL);
 
@@ -93,6 +93,7 @@ public class SmartPuzzle implements Puzzle {
             }
 
             if (decision != null) {
+                var_assignments++;
                 locations.push(decision);
                 values.push(superposition);
 
@@ -330,6 +331,8 @@ public class SmartPuzzle implements Puzzle {
 
     public void print() {
         //print(-1,-1);
+        // printing assignment count
+        System.out.println("Variable Assignments: " + var_assignments);
         for (int[] row : puzzle) {
             for (int field : row) {
                 int flags = flagsFor(field);
