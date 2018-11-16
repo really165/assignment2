@@ -1,9 +1,11 @@
+package assignment2;
+
 import java.util.*;
 import java.lang.IndexOutOfBoundsException;
 import java.util.concurrent.TimeUnit;
 import java.util.Timer;
 
-public class DumbPuzzle {
+public class DumbPuzzle implements Puzzle {
     private ArrayList<Character> succession;
     private int[][] puzzle;
     private int var_assignments = 0; //counter for the variable assinments

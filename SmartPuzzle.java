@@ -1,3 +1,5 @@
+package assignment2;
+
 import java.util.*;
 import java.lang.IndexOutOfBoundsException;
 import java.util.concurrent.TimeUnit;
